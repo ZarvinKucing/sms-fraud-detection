@@ -1,0 +1,12 @@
+apiVersion: 1
+datasources:
+  - name: SMS Fraud Alerts
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    jsonData: {database: "sms-alerts", timeField: "window_start", version: "2.17.1", flavor: "opensearch"}
+  - name: Identity Alerts
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    jsonData: {database: "iam-alerts", timeField: "window_start", version: "2.17.1", flavor: "opensearch"}

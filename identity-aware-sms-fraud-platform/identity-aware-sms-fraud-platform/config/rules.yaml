@@ -1,0 +1,53 @@
+# DEMO DEFAULTS ONLY.
+# These thresholds are illustrative values tuned against SYNTHETIC data.
+# They are NOT taken from any production system. Tune per environment.
+cdr:
+  window_minutes: 5
+  baseline_hours: 2            # first N hours of the dataset define "normal"
+  applies_to_traffic_types: [A2P]   # P2P/P2A is excluded: different behaviour, avoids false positives
+  severity:                    # score thresholds (score = sum of rule weights, capped at 100)
+    high: 70
+    medium: 30
+  actions:                     # recommended response per severity (always needs a human)
+    high: throttle_request_needs_approval
+    medium: analyst_review
+    low: monitor
+  rules:
+    R001_volume_spike:
+      weight: 40
+      z_threshold: 6.0         # robust z-score (median/MAD) vs the connection's own history
+      min_messages: 40
+    R002_sequential_range:
+      weight: 40
+      block_size_digits: 3     # numbers sharing all but the last N digits = one block
+      min_distinct_in_block: 20
+    R003_failure_rate:
+      weight: 30
+      min_messages: 20
+      min_fail_ratio: 0.5
+      min_delta_vs_peers: 0.3  # must exceed peer median failure ratio by this much
+    R004_new_destination_country:
+      weight: 35
+      min_messages: 15
+      profile_min_share: 0.01  # country counts as "known" if >= 1% of baseline traffic
+      min_baseline_messages: 50
+    R005_financial_anomaly:
+      weight: 35
+      price_multiple: 5.0      # price >= N x median price for the same connection+country
+      min_messages: 5          # (negative margin also counts)
+    R006_new_sender_burst:
+      weight: 30
+      min_messages: 30         # sender ID first seen after the baseline, sending a burst
+
+iam:
+  window_minutes: 5
+  timezone: Asia/Jakarta
+  business_hours: {start: 7, end: 19}
+  privileged_roles: [platform_admin, fraud_manager, rule_engineer]
+  rules:
+    IAM001_brute_force:        {threshold: 8,  window_minutes: 5}    # failed logins, same user
+    IAM002_password_spraying:  {threshold: 5,  window_minutes: 10}   # distinct users failing from one IP
+    IAM003_off_hours_login:    {enabled: true}
+    IAM004_privileged_role_grant: {enabled: true}
+    IAM005_excessive_unmask:   {threshold: 25, window_minutes: 30}
+    IAM006_sod_violation:      {enabled: true}

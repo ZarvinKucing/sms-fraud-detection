@@ -1,0 +1,216 @@
+{
+  "realm": "sms-fraud",
+  "enabled": true,
+  "displayName": "SMS Fraud Platform (lab)",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "minimumQuickLoginWaitSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and notUsername",
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "accessTokenLifespan": 300,
+  "eventsEnabled": true,
+  "eventsExpiration": 2592000,
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "fraud_analyst",
+        "description": "First-line monitoring. Masked data only."
+      },
+      {
+        "name": "fraud_investigator",
+        "description": "Investigates alerts; justified unmask; requests connection actions."
+      },
+      {
+        "name": "rule_engineer",
+        "description": "Proposes detection rule changes; cannot approve them."
+      },
+      {
+        "name": "fraud_manager",
+        "description": "Approves rule changes and connection actions."
+      },
+      {
+        "name": "auditor",
+        "description": "Read-only oversight incl. audit log."
+      },
+      {
+        "name": "platform_admin",
+        "description": "Manages identities/platform; no access to fraud data."
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "analyst1",
+      "enabled": true,
+      "email": "analyst1@example.test",
+      "emailVerified": true,
+      "firstName": "analyst1",
+      "lastName": "Demo",
+      "realmRoles": [
+        "fraud_analyst"
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Demo-123!",
+          "temporary": true
+        }
+      ]
+    },
+    {
+      "username": "investigator1",
+      "enabled": true,
+      "email": "investigator1@example.test",
+      "emailVerified": true,
+      "firstName": "investigator1",
+      "lastName": "Demo",
+      "realmRoles": [
+        "fraud_investigator"
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Demo-123!",
+          "temporary": true
+        }
+      ]
+    },
+    {
+      "username": "engineer1",
+      "enabled": true,
+      "email": "engineer1@example.test",
+      "emailVerified": true,
+      "firstName": "engineer1",
+      "lastName": "Demo",
+      "realmRoles": [
+        "rule_engineer"
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Demo-123!",
+          "temporary": true
+        }
+      ]
+    },
+    {
+      "username": "manager1",
+      "enabled": true,
+      "email": "manager1@example.test",
+      "emailVerified": true,
+      "firstName": "manager1",
+      "lastName": "Demo",
+      "realmRoles": [
+        "fraud_manager"
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Demo-123!",
+          "temporary": true
+        }
+      ]
+    },
+    {
+      "username": "auditor1",
+      "enabled": true,
+      "email": "auditor1@example.test",
+      "emailVerified": true,
+      "firstName": "auditor1",
+      "lastName": "Demo",
+      "realmRoles": [
+        "auditor"
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Demo-123!",
+          "temporary": true
+        }
+      ]
+    },
+    {
+      "username": "admin1",
+      "enabled": true,
+      "email": "admin1@example.test",
+      "emailVerified": true,
+      "firstName": "admin1",
+      "lastName": "Demo",
+      "realmRoles": [
+        "platform_admin"
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe-Demo-123!",
+          "temporary": true
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "grafana",
+      "name": "Grafana",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "dev-only-change-me",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:3000",
+      "redirectUris": [
+        "http://localhost:3000/login/generic_oauth"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ]
+}

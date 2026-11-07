@@ -1,0 +1,56 @@
+# LAB ONLY. Single-node, no TLS, OpenSearch security plugin disabled, ports bound to localhost.
+# NOT verified in CI (needs Docker); image tags are pinned but check for newer patch releases.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.0.7}
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:?set in .env}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:?set in .env}
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"   # lets Grafana reach Keycloak as keycloak:8080 inside the network
+    ports: ["127.0.0.1:8080:8080"]
+    volumes:
+      - ./iam/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports: ["127.0.0.1:9200:9200"]
+    volumes: [osdata:/usr/share/opensearch/data]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    depends_on: [keycloak, opensearch]
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set in .env}
+      GF_INSTALL_PLUGINS: grafana-opensearch-datasource
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: Keycloak
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: grafana
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: ${GRAFANA_OIDC_SECRET:?set in .env}
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: http://localhost:8080/realms/sms-fraud/protocol/openid-connect/auth
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: http://keycloak:8080/realms/sms-fraud/protocol/openid-connect/token
+      GF_AUTH_GENERIC_OAUTH_API_URL: http://keycloak:8080/realms/sms-fraud/protocol/openid-connect/userinfo
+      GF_AUTH_GENERIC_OAUTH_USE_PKCE: "true"
+      # Realm role -> Grafana role. platform_admin is intentionally unmapped: with strict mode it cannot see fraud data.
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT: "true"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: >-
+        contains(roles[*], 'rule_engineer') && 'Editor' ||
+        contains(roles[*], 'fraud_analyst') && 'Viewer' ||
+        contains(roles[*], 'fraud_investigator') && 'Viewer' ||
+        contains(roles[*], 'fraud_manager') && 'Viewer' ||
+        contains(roles[*], 'auditor') && 'Viewer'
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - gfdata:/var/lib/grafana
+
+volumes:
+  osdata:
+  gfdata:
